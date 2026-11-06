@@ -21,7 +21,7 @@ The dashboard opens in your browser at [127.0.0.1:8765](http://127.0.0.1:8765/).
 - See disk usage ranked by project. Expand a source to find the tasks, projects, and export folders behind its total.
 - Search by filename, path, or project name. Sort the file list by size or modification date.
 - Click an image or video to preview it. You can play and seek videos supported by your browser. For formats such as ProRes, use the option in the preview window to open the file in a macOS app.
-- Review your selection before moving files to Trash. Restore them from Finder if needed. macOS reclaims the space after you empty Trash.
+- Tick the files you want to remove, then click **删除选中文件** (Delete selected files) in the toolbar. Confirm the list to move those files to Trash. Restore them from Finder if needed. macOS reclaims the space after you empty Trash.
 
 ## Scan scope
 

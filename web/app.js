@@ -65,8 +65,8 @@ function sizeText(bytes) {
   return sizeParts(bytes).join(" ");
 }
 
-function notice(message = "", type = "") {
-  const banner = byId("notice");
+function notice(message = "", type = "", target = "notice") {
+  const banner = byId(target);
   banner.className = "notice " + type;
   banner.hidden = !message;
   banner.replaceChildren(...(message ? [icon(type ? "alert" : "info"), element("span", "", message)] : []));
@@ -252,7 +252,7 @@ function renderScope() {
     button.setAttribute("aria-pressed", String(active));
   }
   byId("clear-project").hidden = !root;
-  byId("clear-project").lastElementChild.textContent = project ? "清除项目筛选" : "查看全部来源";
+  byId("clear-project").lastElementChild.textContent = project ? "返回来源" : "返回总览";
   byId("breadcrumb-root").textContent = [root?.label, project?.label].filter(Boolean).join(" / ") || "存储总览";
   byId("hero-scope").textContent = root ? `${project?.label || root.label} · 磁盘占用` : "已扫描目录的磁盘占用";
   const unavailable = root?.error && !root.count;
@@ -554,10 +554,11 @@ function updateSelection() {
     const trash = row.querySelector(".trash");
     if (trash) trash.disabled = blocked;
   }
-  byId("bulk-trash").hidden = !selected.size;
-  byId("bulk-trash").disabled = blocked;
-  byId("selected-count").textContent = integer.format(selected.size);
-  byId("bulk-trash").title = selected.size >= selectionLimit ? "一次最多移动 200 个文件" : "";
+  byId("bulk-trash").disabled = blocked || !selected.size;
+  const count = byId("selected-count");
+  count.hidden = !selected.size;
+  count.textContent = integer.format(selected.size);
+  byId("bulk-trash").title = selected.size >= selectionLimit ? "最多勾选 200 个文件" : "";
 }
 
 function resetFilters() {
@@ -662,28 +663,33 @@ function openTrash(files) {
 }
 
 async function submitTrash() {
-  if (mutating || !trashFiles.length) return;
+  if (mutating || !byId("trash-dialog").open || !trashFiles.length) return;
   const files = trashFiles;
-  const ids = files.map((file) => file.id);
+  notice("", "", "trash-outcome");
   mutating = true;
   setControls();
-  feedback("trash-feedback", "正在移到废纸篓…");
   byId("trash-submit").lastElementChild.textContent = "正在移动";
+  feedback("trash-feedback", "正在移到废纸篓…");
+  let outcome;
+  let warning;
   try {
-    const response = await request("/api/trash", "POST", { ids });
-    const results = new Map((response.results || []).map((result) => [result.id, result]));
-    const failed = files.filter((file) => !results.get(file.id)?.ok);
+    const { results } = await request("/api/trash", "POST", { ids: files.map((file) => file.id) });
+    const byFile = new Map(results.map((result) => [result.id, result]));
+    const failed = files.filter((file) => !byFile.get(file.id)?.ok);
     const moved = files.length - failed.length;
-    const details = failed.slice(0, 3).map((file) => `${file.name}（${results.get(file.id)?.error || "状态未知"}）`).join("、");
-    const outcome = `已移到废纸篓 ${integer.format(moved)} 个文件。`
-      + (failed.length ? `${integer.format(failed.length)} 个未能确认移动。${details}${failed.length > 3 ? " 等" : ""}` : "");
-    byId("trash-dialog").close();
-    const updated = await scan();
-    notice(outcome + (updated ? "" : " 刷新扫描结果失败，请重新扫描。"), failed.length || !updated ? "warning" : "");
+    const details = failed.slice(0, 3).map((file) => `${file.name}（${byFile.get(file.id)?.error || "状态未知"}）`).join("、");
+    outcome = `已移到废纸篓 ${integer.format(moved)} 个文件。`
+      + (failed.length ? `${integer.format(failed.length)} 个未能确认移动。${details}${failed.length > 3 ? " 等" : ""}。` : "");
+    warning = failed.length > 0;
   } catch (error) {
+    outcome = `无法确认移动结果。${error.message}`;
+    warning = true;
+  }
+  try {
     byId("trash-dialog").close();
     const updated = await scan();
-    notice(`无法确认移动结果。${error.message}${updated ? " 已刷新文件清单。" : ""}`, "error");
+    notice(outcome + (updated ? "" : " 刷新扫描结果失败，请重新扫描。"),
+      warning || !updated ? "warning" : "", "trash-outcome");
   } finally {
     trashFiles = [];
     mutating = false;
@@ -728,7 +734,7 @@ byId("add-root").addEventListener("submit", (event) => {
   const path = byId("root-path").value.trim();
   if (path) updateRoots("/api/roots", "POST", { path }, "已添加到扫描范围。");
 });
-byId("bulk-trash").addEventListener("click", () => openTrash([...selected].map((id) => filesById.get(id)).filter(Boolean)));
+byId("bulk-trash").addEventListener("click", () => openTrash([...selected].map((id) => filesById.get(id)).filter((file) => file?.trashable)));
 byId("trash-close").addEventListener("click", () => byId("trash-dialog").close());
 byId("trash-cancel").addEventListener("click", () => byId("trash-dialog").close());
 byId("trash-submit").addEventListener("click", submitTrash);

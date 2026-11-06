@@ -116,6 +116,7 @@ svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 1.65; strok
 .search-box input::placeholder { color: var(--muted); }
 .select-box select { cursor: pointer; padding: 0 8px; }
 .toolbar-count { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
+#trash-outcome { margin: 0 19px 12px; }
 .table-scroll { overflow: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
 thead { background: var(--raised); color: var(--secondary-ink); }
@@ -279,6 +280,7 @@ img.preview-media { width: auto; max-width: 100%; height: auto; }
   .inventory-heading h2 { font-size: 17px; }
   .inventory-heading p { font-size: 10px; }
   .toolbar { padding: 0 10px 10px; flex-wrap: wrap; }
+  #trash-outcome { margin-inline: 10px; }
   .search-box { flex: 1; min-width: 125px; }
   .toolbar-count { display: none; }
   .check-column { width: 31px; padding: 0 3px; }
