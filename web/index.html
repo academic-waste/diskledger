@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DiskLedger · 本地存储账本</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/projects.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="9" rx="2"/><path d="m3.5 12 2.4-6.7A2 2 0 0 1 7.8 4h8.4a2 2 0 0 1 1.9 1.3l2.4 6.7M7 15.5h.01m4 0h.01m3.5 0h3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.5"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.5"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.5"/><rect x="14" y="14" width="6.5" height="6.5" rx="1.5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8.5 8.5 0 0 0-14.6-1L3.5 9M3.5 4.5V9h4.5m-4 7a8.5 8.5 0 0 0 14.6 1l1.9-2m0 4.5V15H16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.2 4.2"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Zm0 0v7h7M8 14h8m-8 3h5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m3 17 5-4 3 2 4-4 6 5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/></symbol>
+    <symbol id="i-preview" viewBox="0 0 24 24"><path d="M2.5 12s3.7-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.7 6.5-9.5 6.5S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M13 5h6v6m0-6-8 8m5 0v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-audio" viewBox="0 0 24 24"><path d="M4 10v4m4-7v10m4-14v18m4-15v12m4-8v4"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8m-9 4h4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3.5 6.5h17m-10.5 0V4h4v2.5m4.5 0-1 13a1.5 1.5 0 0 1-1.5 1.5h-8a1.5 1.5 0 0 1-1.5-1.5l-1-13M10 10v7m4-7v7"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="m8 9 4-4 4 4m-8 6 4 4 4-4"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14m-5-5 5 5 5-5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5m-5 5 5-5 5 5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.5 4.8a1.7 1.7 0 0 1 3 0l7.2 12.7a1.7 1.7 0 0 1-1.5 2.5H4.8a1.7 1.7 0 0 1-1.5-2.5ZM12 9v4m0 3h.01"/></symbol>
+  </svg>
+  <a class="skip-link" href="#file-inventory">跳到文件清单</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="存储导航">
+      <div class="brand">
+        <span class="brand-icon"><svg><use href="#i-drive"/></svg></span>
+        <div><strong>DiskLedger</strong><span>LOCAL STORAGE</span></div>
+        <button class="button secondary mobile-manage" id="manage-mobile" type="button"><svg><use href="#i-plus"/></svg><span>管理目录</span></button>
+      </div>
+      <div class="side-content">
+        <button class="nav-button overview is-current" id="all-roots" type="button" aria-pressed="true">
+          <svg><use href="#i-grid"/></svg><span>存储总览</span>
+        </button>
+        <div class="source-header">
+          <span>扫描目录</span>
+          <button class="icon-button" id="manage-inline" type="button" title="管理扫描目录" aria-label="管理扫描目录"><svg><use href="#i-plus"/></svg></button>
+        </div>
+        <nav id="source-nav" class="source-nav" aria-label="扫描目录"></nav>
+        <button class="nav-button manage" id="manage-roots" type="button"><svg><use href="#i-plus"/></svg><span>管理目录</span></button>
+      </div>
+      <div class="side-footer">
+        <span class="status-dot"></span><span>仅本机运行</span><span class="side-os">macOS</span>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace-header">
+        <div>
+          <div class="breadcrumb"><span>工作空间</span><svg><use href="#i-right"/></svg><span id="breadcrumb-root">存储总览</span></div>
+          <h1>存储占用</h1>
+          <p class="lede">按项目查看 ChatGPT 与 Codex 的本地产物和磁盘占用。</p>
+        </div>
+        <div class="scan-controls">
+          <span id="scan-time" class="scan-time" aria-live="polite">正在读取本地目录…</span>
+          <button class="button primary" id="scan" type="button"><svg><use href="#i-refresh"/></svg><span>重新扫描</span></button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status" hidden></div>
+
+      <section class="hero" aria-labelledby="hero-label">
+        <div class="hero-total">
+          <span id="hero-label" class="hero-label"><span class="hero-dot"></span><span id="hero-scope">已扫描目录的磁盘占用</span></span>
+          <div class="hero-number"><strong id="total-value">—</strong><span id="total-unit"></span></div>
+          <div class="hero-meta"><span id="total-files">— 个文件</span><span class="hero-divider"></span><span id="total-folders">— 个目录</span></div>
+        </div>
+        <div class="hero-chart">
+          <div class="chart-title"><h2 id="chart-label">项目占用排行</h2><span id="ranking-caption">按磁盘占用排序</span></div>
+          <ol id="project-ranking" class="ranking" aria-labelledby="chart-label"></ol>
+        </div>
+      </section>
+
+      <div class="disk-summary" id="disk-summary" hidden>
+        <svg><use href="#i-drive"/></svg><span>启动磁盘</span>
+        <div class="disk-meter" id="disk-meter" role="meter" aria-label="启动磁盘占用百分比" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+        <span id="disk-text"></span>
+      </div>
+
+      <section class="project-panel" aria-labelledby="project-title">
+        <div class="project-heading">
+          <div><h2 id="project-title">来源与关联项目</h2><p>展开来源查看下属项目，点击项目查看对应文件。</p></div>
+          <span id="project-count" class="project-count"></span>
+        </div>
+        <div id="project-tree" class="project-tree"></div>
+      </section>
+
+      <section class="inventory" id="file-inventory" aria-labelledby="inventory-title">
+        <div class="inventory-heading">
+          <div><h2 id="inventory-title">大文件清单</h2><p id="list-summary">正在读取扫描结果…</p></div>
+          <button type="button" class="button danger-outline" id="bulk-trash" hidden><svg><use href="#i-trash"/></svg><span>移到废纸篓</span><span class="selected-count" id="selected-count"></span></button>
+        </div>
+        <div class="toolbar">
+          <button id="clear-project" type="button" class="button secondary scope-clear" hidden><svg><use href="#i-close"/></svg><span>清除项目筛选</span></button>
+          <label class="search-box"><svg><use href="#i-search"/></svg><span class="sr-only">搜索文件名或路径</span><input type="search" id="search" placeholder="搜索文件名或路径"></label>
+          <label class="select-box"><span class="sr-only">最小文件大小</span><select id="minimum-size">
+            <option value="0">全部大小</option>
+            <option value="10000000">10 MB 以上</option>
+            <option value="100000000">100 MB 以上</option>
+            <option value="1000000000">1 GB 以上</option>
+          </select></label>
+          <span id="visible-result" class="toolbar-count" aria-live="polite"></span>
+        </div>
+
+        <div class="table-scroll">
+          <table aria-label="大文件列表">
+            <thead><tr>
+              <th class="check-column" scope="col"><input type="checkbox" id="check-page" aria-label="选择本页可清理的文件"></th>
+              <th class="file-column" scope="col"><button class="sort-button" type="button" data-sort="name">文件名 <svg><use href="#i-sort"/></svg></button></th>
+              <th class="size-column" scope="col" aria-sort="descending"><button class="sort-button" type="button" data-sort="allocated">磁盘占用 <svg><use href="#i-down"/></svg></button></th>
+              <th class="date-column" scope="col"><button class="sort-button" type="button" data-sort="mtime">修改时间 <svg><use href="#i-sort"/></svg></button></th>
+              <th class="action-column" scope="col"><span class="sr-only">操作</span></th>
+            </tr></thead>
+            <tbody id="file-rows"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state">
+            <span class="empty-icon"><svg><use id="empty-symbol" href="#i-refresh"/></svg></span>
+            <h3 id="empty-title">正在扫描文件</h3>
+            <p id="empty-copy">扫描时间取决于目录中的文件数量。</p>
+          </div>
+        </div>
+        <footer class="inventory-footer">
+          <span id="page-summary">—</span>
+          <div class="pagination">
+            <button class="icon-button" type="button" id="page-prev" aria-label="上一页" title="上一页" disabled><svg><use href="#i-left"/></svg></button>
+            <span id="page-count">1 / 1</span>
+            <button class="icon-button" type="button" id="page-next" aria-label="下一页" title="下一页" disabled><svg><use href="#i-right"/></svg></button>
+          </div>
+        </footer>
+      </section>
+
+      <p class="footnote"><svg><use href="#i-info"/></svg><span>废纸篓中的文件可以恢复。清倒废纸篓后，系统才会释放对应的磁盘空间。</span></p>
+    </main>
+  </div>
+
+  <dialog class="dialog" id="roots-dialog" aria-labelledby="roots-title">
+    <div class="dialog-heading">
+      <div><h2 id="roots-title">管理扫描目录</h2><p>添加保存 ChatGPT 下载文件或 Codex 项目产物的本地文件夹。</p></div>
+      <button class="icon-button dialog-close" type="button" id="roots-close" aria-label="关闭"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <form id="add-root" class="root-form">
+      <label for="root-path">本地文件夹路径</label>
+      <div><input id="root-path" name="path" placeholder="例如 ~/Downloads" spellcheck="false" autocomplete="off" required><button class="button primary" type="submit"><svg><use href="#i-plus"/></svg><span>添加</span></button></div>
+      <small>在 Finder 中选中文件夹后，按 ⌥⌘C 复制路径。</small>
+    </form>
+    <p id="roots-feedback" class="dialog-feedback" role="status" hidden></p>
+    <div id="root-list" class="root-list" aria-label="已添加目录"></div>
+  </dialog>
+
+  <dialog class="dialog trash-dialog" id="trash-dialog" aria-labelledby="trash-title">
+    <div class="dialog-heading">
+      <div><span class="dialog-trash-icon"><svg><use href="#i-trash"/></svg></span><h2 id="trash-title">移到废纸篓</h2><p id="trash-description"></p></div>
+      <button class="icon-button dialog-close" type="button" id="trash-close" aria-label="关闭"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <ul id="trash-list" class="trash-list" aria-label="待移到废纸篓的文件" tabindex="0"></ul>
+    <p class="dialog-note">你可以在 Finder 的废纸篓中恢复这些文件。</p>
+    <p id="trash-feedback" class="dialog-feedback" role="status" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="button secondary" id="trash-cancel" autofocus>取消</button>
+      <button type="button" class="button danger" id="trash-submit"><svg><use href="#i-trash"/></svg><span>确认移动</span></button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog preview-dialog" id="preview-dialog" aria-labelledby="preview-title" aria-describedby="preview-meta">
+    <div class="dialog-heading preview-heading">
+      <div>
+        <span class="preview-kicker"><svg aria-hidden="true"><use href="#i-preview"/></svg>本地预览</span>
+        <h2 id="preview-title"></h2>
+        <p id="preview-meta"></p>
+      </div>
+      <button class="icon-button dialog-close" id="preview-close" type="button" aria-label="关闭预览" autofocus><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="preview-stage" id="preview-stage">
+      <p class="preview-status" id="preview-status" role="status" hidden></p>
+    </div>
+    <div class="preview-footer">
+      <p class="preview-path" id="preview-path"></p>
+      <div class="preview-actions">
+        <button class="button secondary" id="preview-copy" type="button"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>复制路径</span></button>
+        <button class="button secondary" id="preview-open" type="button" hidden><svg aria-hidden="true"><use href="#i-open"/></svg><span>用系统应用打开</span></button>
+      </div>
+    </div>
+    <p class="dialog-feedback" id="preview-feedback" role="status" hidden></p>
+  </dialog>
+</body>
+</html>
