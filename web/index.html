@@ -103,14 +103,14 @@
 
       <section class="inventory" id="file-inventory" aria-labelledby="inventory-title">
         <div class="inventory-heading">
-          <div><h2 id="inventory-title">大文件清单</h2><p id="list-summary">正在读取扫描结果…</p></div>
+          <div><h2 id="inventory-title">大文件清单</h2><p id="list-summary">正在读取扫描结果…</p><p id="list-coverage" hidden></p></div>
           <button id="clear-project" type="button" class="button secondary scope-clear" hidden><svg><use href="#i-left"/></svg><span>返回总览</span></button>
         </div>
         <div class="toolbar">
           <button id="bulk-trash" type="button" class="button danger-outline" disabled><svg><use href="#i-trash"/></svg><span>删除选中文件</span><span class="selected-count" id="selected-count" hidden></span></button>
           <label class="search-box"><svg><use href="#i-search"/></svg><span class="sr-only">搜索文件名或路径</span><input type="search" id="search" placeholder="搜索文件名或路径"></label>
           <label class="select-box"><span class="sr-only">最小文件大小</span><select id="minimum-size">
-            <option value="0">全部大小</option>
+            <option value="0">1 MiB 起</option>
             <option value="10000000">10 MB 以上</option>
             <option value="100000000">100 MB 以上</option>
             <option value="1000000000">1 GB 以上</option>

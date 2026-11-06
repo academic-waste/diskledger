@@ -29,7 +29,7 @@ The default scan checks for local ChatGPT projects, generated images, visualizat
 
 Use the folder manager to add a project directory under your home folder or on an external volume. Removing a directory from the scan removes only the setting. The scan skips hidden folders, common dependency directories, macOS packages, and symbolic links. Git-tracked files are read-only in the dashboard.
 
-The file list shows up to 5,000 files with an apparent size or allocated size of at least 1 MiB. Disk usage is estimated from allocated blocks. APFS clones and shared blocks can make the actual space reclaimed differ from the estimate.
+Usage totals include all scanned files. The file list shows up to 5,000 files with an apparent size or allocated size of at least 1 MiB, and the header shows how many scanned files made the list. Disk usage is estimated from allocated blocks and counts each hard-linked file once per scope. APFS clones can make the actual space reclaimed differ from the estimate.
 
 The app listens on the Mac’s loopback interface. Scans, previews, and folder settings stay on your Mac.
 

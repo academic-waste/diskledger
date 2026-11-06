@@ -260,15 +260,24 @@ function renderScope() {
   const [value, unit] = totals ? sizeParts(totals.allocated) : ["—", ""];
   byId("total-value").textContent = value;
   byId("total-unit").textContent = unit;
-  byId("total-files").textContent = totals ? `${integer.format(totals.count)} 个文件` : "— 个文件";
+  byId("total-files").textContent = totals ? `已扫描 ${integer.format(totals.count)} 个文件` : "— 个文件";
   const folderCount = [...rootsById.values()].filter((item) => !item.error || item.count > 0).length;
   byId("total-folders").textContent = !snapshot ? "— 个来源" : project ? root.label : root ? `${integer.format(root.projects.length)} 个下属项` : `${integer.format(folderCount)} 个来源`;
 
   const issues = root?.error || (root?.skipped ? `有 ${integer.format(root.skipped)} 项无法读取。` : "");
   const details = root ? `${project?.label ? `${project.label} · ` : ""}${project?.path || root.path}${issues ? ` · ${issues}` : ""}` : "";
-  byId("list-summary").textContent = details || (snapshot ? "列出大小或磁盘占用至少 1 MiB 的文件，最多 5,000 项。" : "正在读取扫描结果…");
+  byId("list-summary").textContent = details || (snapshot ? "" : "正在读取扫描结果…");
+  byId("list-summary").hidden = !details && Boolean(snapshot);
   byId("list-summary").classList.toggle("has-issue", Boolean(issues));
   byId("list-summary").title = details;
+  const coverage = byId("list-coverage");
+  coverage.hidden = !totals;
+  if (totals) {
+    const listed = root ? snapshot.files.filter((file) => file.rootId === rootId
+      && (!projectKey || file.projectKey === projectKey)).length : snapshot.files.length;
+    coverage.textContent = `已扫描 ${integer.format(totals.count)} 个文件，清单收录 ${integer.format(listed)} 个。`;
+    coverage.textContent += "收录门槛为文件大小或磁盘占用至少 1 MiB，最多 5,000 项。";
+  }
 }
 
 function renderDisk() {

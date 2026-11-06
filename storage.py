@@ -161,10 +161,21 @@ def _git_lock(path, repositories, indexes):
     return None
 
 
+def _allocated_once(allocated, hard_link, seen):
+    if hard_link is None:
+        return allocated
+    if hard_link in seen:
+        return 0
+    seen.add(hard_link)
+    return allocated
+
+
 def scan(roots: Iterable[Root], *, excluded_paths=(), minimum_size=MINIMUM_SIZE):
-    """Return public file rows, aggregate root stats, and a private deletion snapshot."""
+    """Return file rows, root stats, a private deletion snapshot, and global totals."""
     excluded = tuple(_absolute(path) for path in excluded_paths)
     rows, stats, snapshot, indexes = [], [], {}, {}
+    global_links = set()
+    global_allocated = 0
     for root in roots:
         path = _absolute(root.path)
         aggregate = dict(id=root.id, label=root.label, path=str(path), size=0, allocated=0,
@@ -176,19 +187,25 @@ def scan(roots: Iterable[Root], *, excluded_paths=(), minimum_size=MINIMUM_SIZE)
         try:
             with _directory(path.anchor, path.parts[1:]) as descriptor:
                 root_identity = _identity(os.fstat(descriptor))
-                _scan_root(root, path, descriptor, root_identity, excluded, minimum_size,
-                           rows, aggregate, snapshot, indexes)
+                global_allocated += _scan_root(root, path, descriptor, root_identity, excluded,
+                                               minimum_size, rows, aggregate, snapshot, indexes,
+                                               global_links)
         except FileNotFoundError:
             aggregate["error"] = "目录不存在"
         except OSError as error:
             aggregate["error"] = f"无法读取目录：{error.strerror or error}"
-    return rows, stats, snapshot
+    totals = {key: sum(root[key] for root in stats) for key in ("size", "count")}
+    totals["allocated"] = global_allocated
+    return rows, stats, snapshot, totals
 
 
 def _scan_root(root, root_path, root_fd, root_identity, excluded, minimum_size,
-               rows, aggregate, snapshot, indexes):
+               rows, aggregate, snapshot, indexes, global_links):
     pending = [((), _repositories(root_path.parent))]
     projects = {}
+    project_links = {}
+    root_links = set()
+    global_allocated = 0
     while pending:
         parts, repositories = pending.pop()
         directory_path = root_path.joinpath(*parts)
@@ -220,18 +237,21 @@ def _scan_root(root, root_path, root_fd, root_identity, excluded, minimum_size,
                     if root.include and not root.include(relative_path):
                         continue
                     allocated = info.st_blocks * 512
+                    hard_link = _identity(info) if info.st_nlink > 1 else None
                     aggregate["size"] += info.st_size
-                    aggregate["allocated"] += allocated
+                    aggregate["allocated"] += _allocated_once(allocated, hard_link, root_links)
                     aggregate["count"] += 1
+                    global_allocated += _allocated_once(allocated, hard_link, global_links)
                     group = root.group(relative_path) if root.group else None
                     if group is not None:
                         key, label = group
                         if key not in projects:
                             projects[key] = dict(key=key, label=label, path=str(root_path / key),
                                                  size=0, allocated=0, count=0)
+                            project_links[key] = set()
                         project = projects[key]
                         project["size"] += info.st_size
-                        project["allocated"] += allocated
+                        project["allocated"] += _allocated_once(allocated, hard_link, project_links[key])
                         project["count"] += 1
                     if max(info.st_size, allocated) < minimum_size:
                         continue
@@ -258,6 +278,7 @@ def _scan_root(root, root_path, root_fd, root_identity, excluded, minimum_size,
             if not parts:
                 aggregate["error"] = f"无法读取目录：{error.strerror or error}"
     aggregate["projects"] = sorted(projects.values(), key=lambda project: (-project["allocated"], project["key"]))
+    return global_allocated
 
 
 def trash_files(ids, snapshot):

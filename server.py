@@ -294,7 +294,7 @@ class StorageManager:
             configured = self.defaults + self.custom
             linked_records = list(attached_roots(state, configured))
             linked = [root for _, root in linked_records]
-            files, roots, snapshot = scan(configured + linked, excluded_paths=(APP_DIR,))
+            files, roots, snapshot, totals = scan(configured + linked, excluded_paths=(APP_DIR,))
             add_project_titles(roots, state)
             covered = {project_id for project_id, _ in linked_records}
             covered.update(project["key"] for root in roots if root["id"] == "projects" for project in root["projects"])
@@ -313,7 +313,6 @@ class StorageManager:
                 if mime:
                     row["previewKind"] = mime.split("/", 1)[0]
             self.snapshot = {row["id"]: snapshot[row["id"]] for row in files}
-            totals = {key: sum(root[key] for root in roots) for key in ("size", "allocated", "count")}
             disk = shutil.disk_usage(HOME)
             return {
                 "roots": roots,
